@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boxing Quiz Arcade</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <main class="game-container" aria-label="Boxing Quiz Arcade">
+        <section id="main-menu" aria-label="Menu principal" data-background="default" hidden>
+            <canvas id="menu-canvas" width="640" height="360" aria-hidden="true"></canvas>
+            <nav class="menu-buttons" data-menu-buttons aria-label="Controles do menu">
+                <button type="button" data-menu-play aria-label="JOGAR"><canvas width="174" height="32" aria-hidden="true"></canvas></button>
+                <button type="button" data-menu-options-button aria-label="OPÇÕES"><canvas width="174" height="32" aria-hidden="true"></canvas></button>
+            </nav>
+            <section class="menu-options" data-menu-options aria-label="Opções de áudio e acessibilidade" hidden>
+                <h2>OPÇÕES</h2>
+                <div class="menu-settings-scroll" data-menu-settings-host></div>
+                <button type="button" data-menu-back>VOLTAR AO MENU</button>
+            </section>
+        </section>
+        <section id="difficulty-lobby" aria-labelledby="lobby-title">
+            <h1 id="lobby-title">BOXING QUIZ ARCADE</h1>
+            <p>Escolha sua dificuldade</p>
+            <div class="lobby-options" role="group" aria-label="Dificuldade">
+                <button type="button" data-difficulty="easy" aria-pressed="false"><strong>FÁCIL</strong><span>Ritmo mais calmo</span></button>
+                <button type="button" data-difficulty="normal" aria-pressed="true"><strong>NORMAL</strong><span>Golpes variados</span></button>
+                <button type="button" data-difficulty="hard" aria-pressed="false"><strong>DIFÍCIL</strong><span>Ritmo rápido e guarda adaptativa</span></button>
+            </div>
+            <button type="button" data-start-fight>INICIAR LUTA</button>
+            <button type="button" id="difficulty-back">VOLTAR AO MENU</button>
+        </section>
+        <canvas id="game-canvas" width="640" height="360" role="img" aria-label="Ringue de boxe arcade com plateia, boxeadores, barras de vida, cronômetro da luta e perguntas de ataque e defesa" hidden>
+            Seu navegador precisa oferecer suporte a Canvas para exibir o jogo.
+        </canvas>
+        <details id="question-review" class="question-review" hidden>
+            <summary aria-live="polite">ÚLTIMA RESPOSTA — EXPLICAÇÃO</summary>
+            <p id="question-review-content"></p>
+        </details>
+        <button type="button" id="skip-intro" hidden>PULAR INTRO · ENTER</button>
+        <p id="intro-caption" class="sr-only" aria-live="polite"></p>
+        <section id="punch-controls" class="punch-controls" aria-label="Selecionar tipo de soco" hidden>
+            <button type="button" class="punch-button" data-punch="jab" aria-pressed="false">
+                <span class="punch-name" data-name>JAB</span><span class="punch-damage" data-damage></span>
+                <span class="punch-status" data-status></span><span class="punch-progress" aria-hidden="true"><span data-progress></span></span>
+            </button>
+            <button type="button" class="punch-button is-selected" data-punch="straight" aria-pressed="true">
+                <span class="punch-name" data-name>DIRETO</span><span class="punch-damage" data-damage></span>
+                <span class="punch-status" data-status></span><span class="punch-progress" aria-hidden="true"><span data-progress></span></span>
+            </button>
+            <button type="button" class="punch-button" data-punch="hook" aria-pressed="false">
+                <span class="punch-name" data-name>GANCHO</span><span class="punch-damage" data-damage></span>
+                <span class="punch-status" data-status></span><span class="punch-progress" aria-hidden="true"><span data-progress></span></span>
+            </button>
+            <button type="button" class="punch-button" data-punch="uppercut" aria-pressed="false">
+                <span class="punch-name" data-name>UPPERCUT</span><span class="punch-damage" data-damage></span>
+                <span class="punch-status" data-status></span><span class="punch-progress" aria-hidden="true"><span data-progress></span></span>
+            </button>
+        </section>
+        <details id="arena-settings" class="arena-settings">
+            <summary>ÁUDIO E ACESSIBILIDADE</summary>
+            <label>Flashes visuais <select data-arena-setting="flashes"><option value="normal">Normais</option><option value="reduced">Reduzidos</option><option value="off">Desativados</option></select></label>
+            <label>Flash de impacto <select data-arena-setting="impactFlash"><option value="normal">Normal</option><option value="reduced">Reduzido</option><option value="off">Desativado</option></select></label>
+            <label>Tremor de câmera <select data-arena-setting="shake"><option value="normal">Normal</option><option value="reduced">Reduzido</option><option value="off">Desativado</option></select></label>
+            <label>Efeitos <input aria-label="Volume dos efeitos" type="range" min="0" max="1" step="0.05" data-arena-setting="effectsVolume"></label>
+            <label>Torcida <input aria-label="Volume da torcida" type="range" min="0" max="1" step="0.05" data-arena-setting="ambienceVolume"></label>
+            <label>Volume geral <input aria-label="Volume geral" type="range" min="0" max="1" step="0.05" data-arena-setting="masterVolume"></label><label>Música <input aria-label="Volume da música" type="range" min="0" max="1" step="0.05" data-arena-setting="musicVolume"></label><label><input type="checkbox" data-arena-setting="muted"> Silenciar tudo</label>
+        </details>
+    </main>
+    <aside id="debug-panel" class="debug-panel" aria-label="Painel de depuração" aria-keyshortcuts="F3" hidden>
+        <header class="debug-panel-header">
+            <strong>DEBUG MODE</strong>
+            <span>F3: fechar</span>
+            <button type="button" data-debug-collapse aria-expanded="true">RECOLHER</button>
+        </header>
+        <div class="debug-speed-status">
+            <span>VELOCIDADE DO JOGO: <output data-debug-value="gameSpeed">1.00×</output></span>
+            <strong class="debug-slow" data-debug-slow hidden>SLOW MOTION</strong>
+        </div>
+        <output class="debug-reveal debug-answer" data-debug-answer-value data-debug-value="answer" aria-live="polite" hidden></output>
+        <div data-debug-body>
+            <label class="debug-option" for="debug-game-speed">VELOCIDADE DO JOGO</label>
+            <input id="debug-game-speed" class="debug-speed-slider" type="range" min="0.10" max="1.00" step="0.01" value="1.00" data-debug-speed>
+            <div class="debug-speed-presets" aria-label="Velocidades de teste">
+                <button type="button" data-debug-speed-10 aria-pressed="false">0.10× — Muito lento</button>
+                <button type="button" data-debug-speed-25 aria-pressed="false">0.25× — Lento</button>
+                <button type="button" data-debug-speed-50 aria-pressed="false">0.50× — Metade da velocidade</button>
+                <button type="button" data-debug-speed-75 aria-pressed="false">0.75× — Levemente lento</button>
+                <button type="button" data-debug-speed-100 aria-pressed="true">1.00× — Normal</button>
+            </div>
+            <label class="debug-option"><input type="checkbox" data-debug-side> MOSTRAR LADO CORRETO PARA DEFENDER</label>
+            <output class="debug-reveal" data-debug-side-value data-debug-value="attackSide" hidden></output>
+            <label class="debug-option"><input type="checkbox" data-debug-answers> MOSTRAR RESPOSTAS CORRETAS</label>
+            <fieldset>
+                <legend>PERGUNTAS DE REDES</legend>
+                <output data-debug-question-status>20 PERGUNTAS CARREGADAS.</output>
+                <p>Seleciona a próxima pergunta sem antecipar o QTE do combate. IDs já usados aguardam o próximo ciclo.</p>
+                <label>ID (net-01 a net-20) <input data-debug-question-input value="net-01" maxlength="6"></label>
+                <button type="button" data-debug-question-id>PRÓXIMA POR ID</button>
+                <button type="button" data-debug-question-random>PRÓXIMA ALEATÓRIA</button>
+                <button type="button" data-debug-question-correct>SIMULAR ACERTO</button>
+                <button type="button" data-debug-question-incorrect>SIMULAR ERRO</button>
+                <button type="button" data-debug-question-timeout>TESTAR TIMEOUT</button>
+            </fieldset>
+            <button type="button" class="debug-force" data-debug-perfect>FORÇAR PRÓXIMA DEFESA PERFEITA</button>
+            <output data-debug-value="perfect"></output>
+            <label class="debug-option" for="debug-rush-outcome">PRÓXIMO COUNTER RUSH CORRETO</label>
+            <select id="debug-rush-outcome" data-debug-rush>
+                <option value="normal">NORMAL</option>
+                <option value="hit">FORÇAR ACERTO COMPLETO</option>
+                <option value="blocked">FORÇAR BLOQUEIO</option>
+            </select>
+            <p class="debug-note">20 perguntas de Redes de Computadores. A dificuldade da sequência continua como metadado.</p>
+            <label>Nocaute <select data-debug-ko-target><option value="enemy">Oponente</option><option value="player">Jogador</option></select></label><label>Golpe final <select data-debug-ko-punch><option value="jab">Jab</option><option value="straight">Direto</option><option value="hook">Gancho</option><option value="uppercut">Uppercut</option><option value="special">Uppercut — simulação Rush/Chain</option></select></label><label>Trecho <select data-debug-ko-stage><option value="full">Nocaute completo</option><option value="knees">Queda de joelhos</option><option value="collapse">Queda final</option><option value="ground">Pausa no chão</option><option value="transition">Transição</option><option value="ceremony">Cerimônia completa</option></select></label><label>Expressão do derrotado <select data-debug-ko-expression><option value="auto">Sequência automática</option><option value="sad">Tristeza</option><option value="frustrated">Frustração</option><option value="exhausted">Exaustão</option></select></label><button type="button" data-debug-ko>TESTAR NOCAUTE</button><small>Teste letal: simula Rush contra o rival ou resposta da Chain contra o jogador; não cria um golpe novo.</small>
+            <label>Expressão do juiz <select data-debug-referee-expression><option value="auto">Automática</option><option value="referee_idle">Idle</option><option value="referee_facepalm">Facepalm</option><option value="referee_shocked">Espanto</option><option value="referee_clap">Aplauso</option><option value="referee_concerned">Preocupação</option><option value="referee_approval">Aprovação</option><option value="referee_reaction_light">Reação leve</option><option value="referee_reaction_medium">Reação moderada</option><option value="referee_reaction_strong">Reação forte</option></select></label>
+            <label>Marcas do jogador <select data-debug-wear-player><option value="auto">Automático</option><option>0</option><option>1</option><option>2</option><option>3</option></select></label><label>Marcas do rival <select data-debug-wear-bot><option value="auto">Automático</option><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
+            <button type="button" data-debug-chain>FORÇAR CONTINUAÇÃO DO COUNTER CHAIN</button>
+            <dl class="debug-values">
+                <dt>Ataques comuns</dt><dd><output data-debug-value="commonAttackCount"></output></dd>
+                <dt>Dificuldade</dt><dd><output data-debug-value="difficulty"></output></dd>
+                <dt>Perfil de IA</dt><dd><output data-debug-value="aiProfile"></output></dd>
+                <dt>Precisão</dt><dd><output data-debug-value="aiAccuracy"></output></dd>
+                <dt>Esquiva</dt><dd><output data-debug-value="aiDodge"></output></dd>
+                <dt>Intervalo da IA</dt><dd><output data-debug-value="aiInterval"></output></dd>
+                <dt>Ataque definido</dt><dd><output data-debug-value="aiAttack"></output></dd>
+                <dt>Ataques recentes</dt><dd><output data-debug-value="aiHistory"></output></dd>
+                <dt>Memória adaptativa</dt><dd><output data-debug-value="aiMemory"></output></dd>
+                <dt>Próximo comum com QTE</dt><dd><output data-debug-value="nextCommonQuestion"></output></dd>
+                <dt>Dificuldade lógica</dt><dd><output data-debug-value="chainDifficulty"></output></dd>
+                <dt>Multiplicador Rush</dt><dd><output data-debug-value="chainMultiplier"></output></dd>
+                <dt>Origem do stun</dt><dd><output data-debug-value="stunSource"></output></dd>
+                <dt>Stun adicional</dt><dd><output data-debug-value="stunAdditional"></output></dd>
+                <dt>Recuperação total</dt><dd><output data-debug-value="stunTotal"></output></dd>
+                <dt>Recuperação restante</dt><dd><output data-debug-value="stunRemaining"></output></dd>
+                <dt>Counter Chain</dt><dd><output data-debug-value="chainCount"></output></dd>
+                <dt>Estado da sequência</dt><dd><output data-debug-value="chainState"></output></dd>
+                <dt>Reação especial pendente</dt><dd><output data-debug-value="chainPending"></output></dd>
+                <dt>Último Rush</dt><dd><output data-debug-value="chainResult"></output></dd>
+                <dt>Encerramento</dt><dd><output data-debug-value="chainEnd"></output></dd>
+                <dt>Combate</dt><dd><output data-debug-value="combat"></output></dd>
+                <dt>Estado do bot</dt><dd><output data-debug-value="opponent"></output></dd>
+                <dt>Golpe selecionado</dt><dd><output data-debug-value="selected"></output></dd>
+                <dt>Recargas (turnos)</dt><dd><output data-debug-value="turns"></output></dd>
+                <dt>Cooldown geral</dt><dd><output data-debug-value="cooldown"></output></dd>
+                <dt>HP jogador / bot</dt><dd><output data-debug-value="playerHP"></output> / <output data-debug-value="enemyHP"></output></dd>
+                <dt>QTE</dt><dd><output data-debug-value="qte"></output></dd>
+                <dt>Counter Rush</dt><dd><output data-debug-value="counterRush"></output></dd>
+                <dt>Janela especial</dt><dd><output data-debug-value="rushTime"></output></dd>
+                <dt>Cutscene</dt><dd><output data-debug-value="cutscene"></output></dd>
+                <dt>Tempo da cutscene</dt><dd><output data-debug-value="cutsceneTime"></output></dd>
+                <dt>Estado seguinte</dt><dd><output data-debug-value="cutsceneNext"></output></dd>
+                <dt>Atordoado</dt><dd><output data-debug-value="stunned"></output></dd>
+                <dt>Tempo atordoado</dt><dd><output data-debug-value="stunTime"></output></dd>
+            </dl>
+            <section aria-label="Última defesa">
+                <h3>ÚLTIMA DEFESA</h3>
+                <dl class="debug-values">
+                    <dt>Lado correto para defender</dt><dd><output data-debug-value="lastDefenseSide"></output></dd>
+                    <dt>Lado escolhido</dt><dd><output data-debug-value="lastDefenseSelectedSide"></output></dd>
+                    <dt>Lado correto?</dt><dd><output data-debug-value="lastDefenseSideCorrect"></output></dd>
+                    <dt>Resposta correta</dt><dd><output data-debug-value="lastDefenseCorrectAnswer"></output></dd>
+                    <dt>Resposta escolhida</dt><dd><output data-debug-value="lastDefenseSelectedAnswer"></output></dd>
+                    <dt>Resposta correta?</dt><dd><output data-debug-value="lastDefenseAnswerCorrect"></output></dd>
+                    <dt>Precisão do ataque do bot</dt><dd><output data-debug-value="lastDefenseAccuracy"></output></dd>
+                    <dt>Multiplicador defensivo</dt><dd><output data-debug-value="lastDefenseMultiplier"></output></dd>
+                    <dt>Dano aplicado</dt><dd><output data-debug-value="lastDefenseDamage"></output></dd>
+                    <dt>Defesa perfeita?</dt><dd><output data-debug-value="lastDefensePerfect"></output></dd>
+                    <dt>Counter Rush ativado?</dt><dd><output data-debug-value="lastDefenseRush"></output></dd>
+                    <dt>Substituição de teste</dt><dd><output data-debug-value="lastDefenseOverride"></output></dd>
+                </dl>
+            </section>
+            <output class="debug-audit" data-debug-value="override" aria-live="polite"></output>
+        </div>
+    </aside>
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
