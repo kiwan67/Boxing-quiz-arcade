@@ -200,4 +200,20 @@ body:has(.debug-panel:not([hidden])) .game-container {
 .menu-settings-scroll { overflow-y: auto; flex: 1; min-height: 0; }
 .menu-options .arena-settings summary { display: none; }
 .menu-options .arena-settings { padding: 0 8px; }
+.menu-credits { z-index: 1; inset: 0; width: 100%; height: 100%; box-sizing: border-box; padding: 3% 5%; border: 0; background: #101c31; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; justify-items: center; gap: 2%; }
+.credits-dialogue { position: relative; align-self: start; margin: 0; width: min(100%, 480px); aspect-ratio: 480 / 66; }
+/* Preserve the bitmap's square pixels even if the grid resizes its box. */
+.credits-dialogue canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; image-rendering: pixelated; background: transparent; }
+.credits-professor-sprite { display: block; height: 100%; width: auto; max-width: 100%; min-height: 0; object-fit: contain; image-rendering: pixelated; }
+.menu-credits [data-credits-back] { width: 42%; padding: 1% 8px; font-size: clamp(10px, 2vw, 14px); }
 #difficulty-back { padding: 6px 12px; }
+#match-pause-ui { position: absolute; top: 0; left: 0; width: 100%; aspect-ratio: 16 / 9; z-index: 10; pointer-events: none; }
+#match-pause-ui [hidden] { display: none !important; }
+#match-pause-ui button { pointer-events: auto; border: 2px solid #d8ae53; border-radius: 0; background: #142036; color: #fff1a0; box-shadow: inset 0 -3px #080f20; font: bold clamp(8px, 1.8vw, 14px) monospace; cursor: pointer; }
+#match-pause-ui button:focus-visible { outline: 2px solid #fff1a0; outline-offset: 2px; }
+#debug-toggle { position: absolute; top: 16.111%; right: 4.7%; width: 9%; height: 4.444%; touch-action: manipulation; }
+.pause-button { position: absolute; right: .625%; top: 16.111%; width: 3.125%; height: 4.444%; padding: 0; line-height: 1; }
+.pause-menu { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: auto; background: rgba(8, 15, 32, .75); }
+.pause-window { display: grid; gap: clamp(4px, 1vw, 10px); width: min(75%, 320px); padding: clamp(8px, 2vw, 22px); border: 3px solid #d8ae53; background: #101c31; box-shadow: 4px 4px #080f20; }
+.pause-window h2 { margin: 0 0 4px; color: #fff1a0; text-align: center; font: bold clamp(12px, 3vw, 22px) monospace; }
+.pause-window button { min-height: 24px; padding: clamp(4px, 1vw, 9px); }

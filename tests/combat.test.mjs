@@ -9,7 +9,7 @@ mock.method(Math, "random", () => 0.99);
 import { gameState } from "../js/gameState.js";
 import { submitAttackAnswer, updateCombat } from './helpers/combat.mjs';
 import { requestQTEPunch as requestAttack } from './helpers/fight.mjs';
-import { drawQTE, QTE_BUTTONS, questionResultLabel } from "../js/qteView.js";
+import { drawQTE, QTE_BUTTONS, questionLayout, questionResultLabel } from "../js/qteView.js";
 import {finishReading} from './helpers/reading.mjs';
 import { resolveDefenseForTest } from "./helpers/defense.mjs";
 import { drawHUD, updateHUD, drawPixelText } from "../js/hud.js";
@@ -23,6 +23,12 @@ import { beginSpontaneousAttack } from "../js/counterAttack.js";
 import { setDebugEnabled, armPerfectDefense, setDebugGameSpeed } from "../js/debug.js";
 import { getGameSpeed } from "../js/simulationClock.js";
 import { finishMatchIntro } from "../js/matchIntro.js";
+import { observeProfessorAnswer } from '../js/professorEasterEgg.js';
+import { rearRingLayer } from '../js/scenery.js';
+import {updateProfessorAnimation,PROFESSOR_ENTRY_TIMING} from '../js/professorAnimation.js';
+import {loadProfessorSprites} from './helpers/professorSprites.mjs';
+import {professorTexture,PROFESSOR_SPRITE_URLS} from '../js/professorSprites.js';
+import {updateProfessorPresentation} from '../js/professorPresentation.js';
 import { selectDefenseSide, submitDefenseAnswer } from './helpers/defenseApi.mjs';
 
 function answerCorrectly() {
@@ -49,7 +55,7 @@ class TestCanvas extends EventTarget {
             globalAlpha: 1, fillStyle: "", imageSmoothingEnabled: true, tx: 0, ty: 0, sx: 1, sy: 1,
             fillRect(x, y, w, h) { canvas.rectangles.push([this.fillStyle, x * this.sx + this.tx, y * this.sy + this.ty, w * this.sx, h * this.sy]); },
             clearRect() { canvas.rectangles.length = 0; },
-            beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {},
+            beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, arc() {}, strokeRect() {}, stroke() {},
             save() { canvas.stack.push([this.globalAlpha, this.fillStyle, this.tx, this.ty, this.sx, this.sy]); },
             restore() { [this.globalAlpha, this.fillStyle, this.tx, this.ty, this.sx, this.sy] = canvas.stack.pop(); },
             translate(x, y) { this.tx += x * this.sx; this.ty += y * this.sy; },
@@ -82,6 +88,63 @@ const { initializeGame, update } = await import('./helpers/main.mjs');
 const { render } = await import("../js/render.js");
 const { characters, CHARACTER_LAYOUT } = await import("../js/characters.js");
 const { initializeInput } = await import("../js/input.js");
+await loadProfessorSprites();
+
+test('professor crosses real renderer layers once and remains behind the bot',t=>{
+    const calls=[],rear=rearRingLayer(caches[0]),drawImage=canvas.context.drawImage;
+    const layout=JSON.stringify(CHARACTER_LAYOUT),cacheCount=caches.length;
+    t.mock.method(canvas.context,'drawImage',function(image,...args){
+        if(Object.keys(PROFESSOR_SPRITE_URLS).some(clip=>image===professorTexture(clip)))calls.push('professor');
+        if(image===rear)calls.push('ropes');
+        if(image===caches[2])calls.push('bot');
+        return drawImage.call(this,image,...args);
+    });
+    for(let streak=0;streak<=8;streak++){
+        if(streak)observeProfessorAnswer(gameState,{outcome:'correct'},++gameState.qte.sequence);
+        calls.length=0;render();
+        assert.equal(calls.filter(call=>call==='professor').length,streak<5?0:1);
+        if(streak===5||streak===6)assert.ok(calls.indexOf('professor')<calls.indexOf('ropes'));
+        if(streak===7){
+            assert.ok(calls.indexOf('professor')<calls.indexOf('ropes'));
+            updateProfessorAnimation(gameState,PROFESSOR_ENTRY_TIMING.prepare+PROFESSOR_ENTRY_TIMING.approach+PROFESSOR_ENTRY_TIMING.stop);
+            calls.length=0;render();
+            assert.ok(calls.indexOf('professor')<calls.indexOf('ropes'),'initial step stays behind the ropes');
+            updateProfessorAnimation(gameState,PROFESSOR_ENTRY_TIMING.edge+PROFESSOR_ENTRY_TIMING.climb*.65);
+            calls.length=0;render();
+            assert.equal(calls.filter(call=>call==='professor').length,1);
+            assert.ok(calls.indexOf('ropes')<calls.lastIndexOf('professor'));
+            assert.ok(calls.indexOf('professor')<calls.indexOf('bot'));
+            updateProfessorAnimation(gameState,3);
+        }
+        if(streak>=8)assert.ok(calls.indexOf('ropes')<calls.indexOf('professor'));
+        if(streak>=5)assert.ok(calls.indexOf('professor')<calls.indexOf('bot'));
+    }
+    observeProfessorAnswer(gameState,{outcome:'incorrect'},++gameState.qte.sequence);
+    calls.length=0;render();assert.equal(calls.filter(call=>call==='professor').length,1,'reaction preserves visible professor');
+    updateProfessorPresentation(gameState,100);
+    for(let n=0;n<9;n++){
+        calls.length=0;render();assert.ok(!calls.includes('professor'));
+        observeProfessorAnswer(gameState,{outcome:'correct'},++gameState.qte.sequence);
+    }
+    assert.equal(JSON.stringify(CHARACTER_LAYOUT),layout);
+    assert.equal(caches.length,cacheCount);assert.equal(frames.length,1);
+});
+
+test('real Counter Rush renderer retains the same professor behind ropes and inside',t=>{
+    const calls=[];
+    t.mock.method(canvas.context,'drawImage',function(image,...args){
+        if(['observing','actions','walkingSide','walkingFront'].some(clip=>image===professorTexture(clip)))calls.push(args);
+    });
+    for(let i=0;i<5;i++)observeProfessorAnswer(gameState,{outcome:'correct'},++gameState.qte.sequence);
+    for(const inside of [false,true]){
+        if(inside){for(let i=0;i<2;i++)observeProfessorAnswer(gameState,{outcome:'correct'},++gameState.qte.sequence);updateProfessorAnimation(gameState,10);}
+        const egg=JSON.stringify(gameState.professorEasterEgg);
+        for(const state of ['counter_rush_cutscene','counter_rush_flash']){
+            gameState.playerCombat.state=state;calls.length=0;render();assert.equal(calls.length,1);
+            assert.equal(JSON.stringify(gameState.professorEasterEgg),egg);
+        }
+    }
+});
 
 function click(button, target = canvas, x = 0, y = 0) {
     // Estes cenários antigos isolam a interação com perguntas no Canvas.
@@ -635,7 +698,7 @@ test("HUD reflete HP imediatamente, limita o preenchimento e suaviza apenas o ra
     updateHUD(gameState, 0.05);
     canvas.rectangles.length = 0;
     drawHUD(canvas.context, gameState);
-    assert.ok(canvas.rectangles.some(r => r[0] === "#efbe3b" && r[1] === 379 && r[2] === 35 && r[3] === 176));
+    assert.ok(canvas.rectangles.some(r => r[0] === "#e8c75e" && r[1] === 399 && r[2] === 35 && r[3] === 176));
     assert.ok(canvas.rectangles.some(r => r[0] === "#c94351" && r[1] >= 379 && r[2] === 35));
     updateHUD(gameState, 1);
     canvas.rectangles.length = 0;
@@ -698,7 +761,7 @@ test("vitória e derrota mostram resultado, bloqueiam entradas e reiniciam sem o
         assert.equal(characters.opponent.torsoX, 0);
         assert.ok(gameState.matchId > oldMatchId);
         render();
-        const fullBars = canvas.rectangles.filter(r => r[0] === "#efbe3b" && r[2] === 35 && r[3] === 196);
+        const fullBars = canvas.rectangles.filter(r => r[0] === "#e8c75e" && r[2] === 35 && r[3] === 196);
         assert.equal(fullBars.length, 2);
         assert.equal(caches.length, cachesBefore);
         assert.equal(frames.length, 1);
@@ -929,12 +992,12 @@ test("renderer aplica flash e filtro especial sem cobrir permanentemente alterna
     selectPunch("jab"); click(0); render();
     assert.equal(gameState.qte.remaining, 5);
     assert.equal(canvas.style.filter, "grayscale(1)");
-    for (const b of QTE_BUTTONS) {
+    for (const b of questionLayout(gameState.qte.question).buttons) {
         assert.ok(canvas.rectangles.some(r => r[0] === "#293e5c" && r[1] === b.x + 2 && r[2] === b.y + 2));
     }
     assert.ok(canvas.rectangles.some(r => r[0] === "#fff1a0" && r[2] === 90));
     const q = gameState.qte.question;
-    const wrong = QTE_BUTTONS.find(b => b.answer !== q.correctAnswer);
+    const wrong = questionLayout(q).buttons.find(b => b.answer !== q.correctAnswer);
     click(0, canvas, 10 + (wrong.x + 10) / 2, 20 + (wrong.y + 10) / 2);
     assert.equal(canvas.style.filter, "");
     restartFight(); beginSpontaneousAttack(); resolveDefenseForTest(); update(0.55); update(3); update(0.12); render();

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prévia isolada — entrada lateral do professor</title>
+<style>
+body{margin:20px;background:#101426;color:#edf2f9;font:15px system-ui}main{max-width:1000px;margin:auto}canvas{display:block;width:100%;height:auto;image-rendering:pixelated;background:#101426;border:1px solid #536478}button,input{font:inherit;margin:8px 8px 8px 0;padding:8px}input{width:min(550px,70%)}pre{white-space:pre-wrap}p{line-height:1.5}
+</style>
+<main>
+<h1>Prévia isolada da entrada lateral</h1>
+<p>Enquadramento ampliado para revelar o lado externo. Não aplicado ao jogo. O ringue, os oito PNGs, suas âncoras, sequência e duração permanecem iguais.</p>
+<button id="force">FORÇAR PROFESSOR — 7 ACERTOS</button><button id="play">REPRODUZIR</button><button id="previous">FRAME ANTERIOR</button><button id="next">PRÓXIMO FRAME</button>
+<input id="time" type="range" min="0" max="5.22" step="0.001" value="0" aria-label="Tempo da entrada">
+<canvas id="game-canvas" width="760" height="360"></canvas>
+<pre id="info">Carregando os sprites existentes…</pre>
+<script type="module" src="./preview.js"></script>
+</main>
+</html>

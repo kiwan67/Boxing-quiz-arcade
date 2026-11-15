@@ -13,7 +13,7 @@ export async function checkMenu(evaluate,screenshot,reload,setFixture){
    const bounds=root.getBoundingClientRect();
    if(bounds.width>640||bounds.height>362)throw Error('Menu exceeds internal viewport');
    const visibleButtons=[...root.querySelectorAll('[data-menu-buttons] button')];
-   if(visibleButtons.length!==2||visibleButtons.some(b=>{const r=b.getBoundingClientRect();return r.left<bounds.left||r.right>bounds.right||r.top<bounds.top||r.bottom>bounds.bottom;}))throw Error('Clipped menu buttons');
+   if(visibleButtons.length!==3||visibleButtons.some(b=>{const r=b.getBoundingClientRect();return r.left<bounds.left||r.right>bounds.right||r.top<bounds.top||r.bottom>bounds.bottom;}))throw Error('Clipped menu buttons');
    const nav=root.querySelector('[data-menu-buttons]'),style=getComputedStyle(nav);
    if(style.backgroundColor!=='rgba(0, 0, 0, 0)'||parseFloat(style.borderWidth)||style.boxShadow!=='none')throw Error('Old central panel remains');
    const first=visibleButtons[0].getBoundingClientRect(),second=visibleButtons[1].getBoundingClientRect();
@@ -26,6 +26,23 @@ export async function checkMenu(evaluate,screenshot,reload,setFixture){
    visibleButtons[0].dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));
    if(document.activeElement!==visibleButtons[1]||visibleButtons[1].dataset.selected!=='true')throw Error('Keyboard down selection failed: '+JSON.stringify({focused:document.activeElement?.outerHTML,selection:visibleButtons.map(b=>b.dataset.selected)}));
    const wasOpen=document.getElementById('arena-settings').open;
+   const state=(await import('/js/gameState.js')).gameState,phase=state.phase,clock=state.gameTime;
+   visibleButtons[1].dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));
+   if(document.activeElement!==visibleButtons[2])throw Error('Credits keyboard selection failed');
+   visibleButtons[2].click();
+   const credits=root.querySelector('[data-menu-credits]'),back=credits.querySelector('[data-credits-back]');
+   if(credits.hidden||!nav.hidden||document.activeElement!==back)throw Error('Credits did not open with focus');
+   if(credits.querySelector('.credits-dialogue').getAttribute('aria-label')!=='ALGUÉM TEM QUE VER ISSO AÍ!')throw Error('Missing professor dialogue');
+   const portrait=credits.querySelector('[data-credits-professor-sprite]');await portrait.decode();
+   if(!portrait.naturalWidth||!portrait.src.includes('professor_credits_embarrassed_v1.png'))throw Error('Credits portrait failed');
+   if(credits.children.length!==3||credits.querySelectorAll('button').length!==1||credits.querySelector('h2,h3,p'))throw Error('Old credits content remains');
+   const panel=credits.getBoundingClientRect();
+   for(const child of credits.children){const r=child.getBoundingClientRect();if(r.left<panel.left||r.right>panel.right+1||r.top<panel.top||r.bottom>panel.bottom+1)throw Error('Credits clipped');}
+   if(state.phase!==phase||state.gameTime!==clock)throw Error('Credits changed combat state');
+   back.click();
+   if(!credits.hidden||nav.hidden||document.activeElement!==visibleButtons[2])throw Error('Credits back failed');
+   visibleButtons[2].click();back.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
+   if(!credits.hidden)throw Error('Credits Escape failed');
    document.querySelector('[data-menu-options-button]').click();
    if(root.querySelector('[data-menu-options]').hidden)throw Error('Options did not open');
    const settings=await import('/js/presentationSettings.js');
@@ -40,10 +57,13 @@ export async function checkMenu(evaluate,screenshot,reload,setFixture){
    document.querySelector('[data-difficulty="hard"]').click();
    if((await import('/js/gameState.js')).gameState.difficulty!=='hard')throw Error('Difficulty selection failed');
    document.getElementById('difficulty-back').click();if(root.hidden)throw Error('Back to menu failed');
-   return {background:'${mode}',leftAligned:true,noCentralPanel:true,mouseSelection:true,keyboardSelection:true,play:true,options:true,volume:true,difficulty:true};
+   return {background:'${mode}',leftAligned:true,noCentralPanel:true,mouseSelection:true,keyboardSelection:true,credits:true,professorDialogue:true,creditsPortrait:true,creditsBack:true,play:true,options:true,volume:true,difficulty:true};
   })()`);
   checks.push(result);await screenshot('menu-'+mode);
   if(mode==='missing'){
+   await evaluate(`document.querySelector('[data-menu-credits-button]').click()`);
+   await screenshot('menu-credits');
+   await evaluate(`document.querySelector('[data-credits-back]').click()`);
    await evaluate(`document.querySelector('[data-menu-options-button]').click()`);
    await screenshot('menu-options');
    await evaluate(`document.querySelector('[data-menu-back]').click()`);

@@ -4,15 +4,23 @@ import { enemyAccuracyDebug } from "./enemyAccuracy.js";
 import { getGameSpeed, setGameSpeed } from "./simulationClock.js";
 import { chainMultiplier } from "./chainRules.js";
 import { activeDifficulty, usesCautiousGuard } from "./difficulty.js";
+import {createProfessorAnimation,canAdvanceProfessorAnimation,advanceProfessorAnimation,professorPresentationFrame} from './professorAnimation.js';
+import {clearProfessorPresentation,cueProfessorSpeech,startProfessorDeparture,professorIsDeparting,updateProfessorPresentation,professorVisualFrame} from './professorPresentation.js';
 
 // Estado de ferramentas de teste, separado do estado/regras normais da luta.
 export const debugState = {
     enabled: false, expanded: true, showAttackSide: false, showAnswers: false, chainNext: false,
+    professorForced: false, professorPreviewMatchId: null,
+    professorMode: null, professorAnimation: null,
     perfectNext: false, perfectAttackId: null, rushOutcome: "normal", lastOverride: "NENHUMA SUBSTITUIÇÃO"
 };
 const live = () => gameState.phase !== "victory" && gameState.phase !== "defeat";
 
 export function clearDebugForces(clearLog = false) {
+    clearProfessorPresentation(debugState.professorAnimation);
+    debugState.professorForced = false;
+    debugState.professorPreviewMatchId = null;
+    debugState.professorMode=null;debugState.professorAnimation=null;
     gameState.questionBank.nextId = null;
     debugState.chainNext = false;
     debugState.perfectNext = false;
@@ -24,12 +32,41 @@ export function clearDebugForces(clearLog = false) {
 
 export function setDebugEnabled(enabled) {
     debugState.enabled = Boolean(enabled);
+    if (debugState.enabled) logProfessorDebug();
     if (!debugState.enabled) {
         setGameSpeed(1);
         clearDebugForces(true);
         debugState.showAttackSide = false;
         debugState.showAnswers = false;
     }
+}
+
+export function logProfessorDebug(message = 'ESTADO DO EASTER EGG') {
+    if (!debugState.enabled) return;
+    const egg = gameState.professorEasterEgg;
+    // Copy primitive values so the console preserves the state at this instant.
+    console.log(`[EASTER EGG] ${message}`, {
+        consecutiveCorrectAnswers: egg.consecutiveCorrectAnswers,
+        professorUnlocked: egg.professorUnlocked,
+        professorPresent: egg.professorPresent,
+        professorInRing: egg.professorInRing,
+        professorEventUsed: egg.appearanceEventUsed
+    });
+}
+
+export function logProfessorAnswerDebug(outcome) {
+    if (!debugState.enabled) return;
+    const egg = gameState.professorEasterEgg;
+    let message = 'ESTADO DO EASTER EGG';
+    if (outcome === 'incorrect' || outcome === 'timeout') message = 'SEQUÊNCIA INTERROMPIDA';
+    else {
+        // Observe notifications without consuming or changing the easter egg.
+        const event = egg.pendingEvents.find(event => event.questionSequence === gameState.qte.sequence
+            && (event.type === 'professor_appearance' || event.type === 'professor_enter_ring'));
+        if (event) message = event.type === 'professor_appearance'
+            ? 'PROFESSOR DESBLOQUEADO' : 'PROFESSOR ENTROU NO RINGUE';
+    }
+    logProfessorDebug(message);
 }
 
 export function setDebugGameSpeed(value) {
@@ -70,6 +107,48 @@ export function consumeRushDebugOutcome() {
 }
 
 const number = value => Number.isFinite(value) ? String(Number(value.toFixed(3))) : "—";
+// Visual override only; the real match and its streak remain untouched.
+export function setProfessorDebugForced(enabled) {
+    return setProfessorDebugMode(enabled?'outside':null);
+}
+export function setProfessorDebugMode(mode) {
+    if(![null,'outside','entry','inside'].includes(mode))return false;
+    if(mode && (!debugState.enabled || !['idle','paused'].includes(gameState.phase) || gameState.matchResult))return false;
+    clearProfessorPresentation(debugState.professorAnimation);
+    debugState.professorForced=Boolean(mode);
+    debugState.professorMode=mode;
+    debugState.professorAnimation=mode?createProfessorAnimation(mode):null;
+    debugState.professorPreviewMatchId=mode?gameState.matchId:null;
+    return true;
+}
+export function updateProfessorDebugAnimation(state,delta){
+    if(!isProfessorDebugForced(state))return;
+    if(!professorIsDeparting(debugState.professorAnimation)&&canAdvanceProfessorAnimation(state,delta))advanceProfessorAnimation(debugState.professorAnimation,delta);
+    updateProfessorPresentation(state,delta,debugState.professorAnimation);
+}
+export function previewProfessorPresentation(action){
+    if(!debugState.enabled||!['idle','paused'].includes(gameState.phase)||gameState.matchResult)return false;
+    if(!isProfessorDebugForced(gameState))setProfessorDebugMode(action==='entry'?'entry':'outside');
+    const key=debugState.professorAnimation,base=professorDebugFrame(gameState);
+    if(action==='sadExit'){
+        const current=professorVisualFrame(gameState,base,key)??base;
+        clearProfessorPresentation(key);return startProfessorDeparture(key,current);
+    }
+    if(professorIsDeparting(key))return false;
+    // Each explicit speech button previews that line immediately. Real event
+    // priorities/cooldowns remain unchanged; an ongoing departure still wins.
+    clearProfessorPresentation(key);
+    return cueProfessorSpeech(key,action,base);
+}
+export function professorDebugFrame(state){
+    if(!isProfessorDebugForced(state))return null;
+    const frame=professorPresentationFrame(debugState.professorAnimation);
+    return {...frame,inRing:!frame.behindRopes};
+}
+export function isProfessorDebugForced(state) {
+    return debugState.enabled && debugState.professorForced && state.matchId===debugState.professorPreviewMatchId
+        && ['idle','paused'].includes(state.phase) && !state.matchResult;
+}
 export function armChainContinuation() {
     if (!debugState.enabled || !live()) return false;
     debugState.chainNext = true;

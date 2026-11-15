@@ -18,7 +18,7 @@ export async function checkNetworkQuestions(evaluate,saveImage){
   };
   const answer=(q,label)=>{const b=view.questionLayout(q).buttons.find(b=>b.answer===label);click(b.x+b.width/2,b.y+b.height/2);};
   const capture=name=>{renderer.render();shots.push({name,data:canvas.toDataURL('image/png').split(',')[1]});};
-  if(!questions.validateQuestionBank(questions.QUESTIONS).ok||questions.QUESTION_COUNT!==20)throw Error('Invalid question bank');
+  if(!questions.validateQuestionBank(questions.QUESTIONS).ok||questions.QUESTION_COUNT!==40)throw Error('Invalid question bank');
   for(const source of questions.QUESTIONS){
    for(const choice of questions.ANSWER_LABELS){
     const q=setup(source.id),layout=view.questionLayout(q);
@@ -61,7 +61,7 @@ export async function checkNetworkQuestions(evaluate,saveImage){
   restart();lobby.updateLobby();
   return {loaded:questions.QUESTION_COUNT,validation:true,answerChecks:checks,timeout:true,defense:true,restart:true,shots};
  })()`);
- assert.equal(report.loaded,20);assert.equal(report.answerChecks.length,80);
+ assert.equal(report.loaded,40);assert.equal(report.answerChecks.length,160);
  for(const shot of report.shots)await saveImage(shot.name,shot.data);
  delete report.shots;return report;
 }

@@ -13,11 +13,19 @@
             <nav class="menu-buttons" data-menu-buttons aria-label="Controles do menu">
                 <button type="button" data-menu-play aria-label="JOGAR"><canvas width="174" height="32" aria-hidden="true"></canvas></button>
                 <button type="button" data-menu-options-button aria-label="OPÇÕES"><canvas width="174" height="32" aria-hidden="true"></canvas></button>
+                <button type="button" data-menu-credits-button aria-label="CRÉDITOS"><canvas width="174" height="32" aria-hidden="true"></canvas></button>
             </nav>
             <section class="menu-options" data-menu-options aria-label="Opções de áudio e acessibilidade" hidden>
                 <h2>OPÇÕES</h2>
                 <div class="menu-settings-scroll" data-menu-settings-host></div>
                 <button type="button" data-menu-back>VOLTAR AO MENU</button>
+            </section>
+            <section class="menu-options menu-credits" data-menu-credits aria-label="Créditos" hidden>
+                <blockquote class="credits-dialogue" aria-label="ALGUÉM TEM QUE VER ISSO AÍ!">
+                    <canvas data-credits-quote width="480" height="66" aria-hidden="true"></canvas>
+                </blockquote>
+                <img class="credits-professor-sprite" data-credits-professor-sprite src="./assets/sprites/professor/professor_credits_embarrassed_v1.png" alt="Professor com sorriso constrangido, gotinha de suor e uma mão atrás da cabeça" width="1024" height="1536">
+                <button type="button" data-credits-back>VOLTAR</button>
             </section>
         </section>
         <section id="difficulty-lobby" aria-labelledby="lobby-title">
@@ -38,6 +46,18 @@
             <summary aria-live="polite">ÚLTIMA RESPOSTA — EXPLICAÇÃO</summary>
             <p id="question-review-content"></p>
         </details>
+        <div id="match-pause-ui" hidden>
+            <button type="button" id="debug-toggle" aria-controls="debug-panel" aria-expanded="false">DEBUG</button>
+            <button type="button" class="pause-button" data-pause aria-label="Pausar partida" aria-keyshortcuts="Escape">||</button>
+            <section class="pause-menu" data-pause-menu role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+                <div class="pause-window">
+                    <h2 id="pause-title">PAUSADO</h2>
+                    <button type="button" data-pause-continue>CONTINUAR</button>
+                    <button type="button" data-pause-restart>REINICIAR PARTIDA</button>
+                    <button type="button" data-pause-leave>VOLTAR AO MENU</button>
+                </div>
+            </section>
+        </div>
         <button type="button" id="skip-intro" hidden>PULAR INTRO · ENTER</button>
         <p id="intro-caption" class="sr-only" aria-live="polite"></p>
         <section id="punch-controls" class="punch-controls" aria-label="Selecionar tipo de soco" hidden>
@@ -92,11 +112,22 @@
             <label class="debug-option"><input type="checkbox" data-debug-side> MOSTRAR LADO CORRETO PARA DEFENDER</label>
             <output class="debug-reveal" data-debug-side-value data-debug-value="attackSide" hidden></output>
             <label class="debug-option"><input type="checkbox" data-debug-answers> MOSTRAR RESPOSTAS CORRETAS</label>
+            <label class="debug-option"><input type="checkbox" data-debug-professor> FORÇAR PROFESSOR — 5 ACERTOS</label>
+            <label class="debug-option"><input type="checkbox" data-debug-professor-entry> FORÇAR PROFESSOR — 7 ACERTOS</label>
+            <label class="debug-option"><input type="checkbox" data-debug-professor-inside> FORÇAR PROFESSOR — DENTRO DO RINGUE</label>
+            <button type="button" data-debug-professor-repeat>REPETIR ENTRADA DO PROFESSOR</button>
+            <button type="button" data-debug-professor-action="appearance">FALA — 5 ACERTOS</button>
+            <button type="button" data-debug-professor-action="entry">FALA — 7 ACERTOS</button>
+            <button type="button" data-debug-professor-action="strong">FALA — GOLPE FORTE</button>
+            <button type="button" data-debug-professor-action="defense">FALA — DEFESA CORRETA</button>
+            <button type="button" data-debug-professor-action="sequence">FALA — SEQUÊNCIA</button>
+            <button type="button" data-debug-professor-action="sadExit">PROFESSOR — SAÍDA TRISTE</button>
+            <output class="debug-audit" data-debug-professor-info></output>
             <fieldset>
                 <legend>PERGUNTAS DE REDES</legend>
-                <output data-debug-question-status>20 PERGUNTAS CARREGADAS.</output>
+                <output data-debug-question-status>40 PERGUNTAS CARREGADAS.</output>
                 <p>Seleciona a próxima pergunta sem antecipar o QTE do combate. IDs já usados aguardam o próximo ciclo.</p>
-                <label>ID (net-01 a net-20) <input data-debug-question-input value="net-01" maxlength="6"></label>
+                <label>ID (net-01 a net-40) <input data-debug-question-input value="net-01" maxlength="6"></label>
                 <button type="button" data-debug-question-id>PRÓXIMA POR ID</button>
                 <button type="button" data-debug-question-random>PRÓXIMA ALEATÓRIA</button>
                 <button type="button" data-debug-question-correct>SIMULAR ACERTO</button>
@@ -111,7 +142,7 @@
                 <option value="hit">FORÇAR ACERTO COMPLETO</option>
                 <option value="blocked">FORÇAR BLOQUEIO</option>
             </select>
-            <p class="debug-note">20 perguntas de Redes de Computadores. A dificuldade da sequência continua como metadado.</p>
+            <p class="debug-note">40 perguntas de Redes de Computadores. A dificuldade da sequência continua como metadado.</p>
             <label>Nocaute <select data-debug-ko-target><option value="enemy">Oponente</option><option value="player">Jogador</option></select></label><label>Golpe final <select data-debug-ko-punch><option value="jab">Jab</option><option value="straight">Direto</option><option value="hook">Gancho</option><option value="uppercut">Uppercut</option><option value="special">Uppercut — simulação Rush/Chain</option></select></label><label>Trecho <select data-debug-ko-stage><option value="full">Nocaute completo</option><option value="knees">Queda de joelhos</option><option value="collapse">Queda final</option><option value="ground">Pausa no chão</option><option value="transition">Transição</option><option value="ceremony">Cerimônia completa</option></select></label><label>Expressão do derrotado <select data-debug-ko-expression><option value="auto">Sequência automática</option><option value="sad">Tristeza</option><option value="frustrated">Frustração</option><option value="exhausted">Exaustão</option></select></label><button type="button" data-debug-ko>TESTAR NOCAUTE</button><small>Teste letal: simula Rush contra o rival ou resposta da Chain contra o jogador; não cria um golpe novo.</small>
             <label>Expressão do juiz <select data-debug-referee-expression><option value="auto">Automática</option><option value="referee_idle">Idle</option><option value="referee_facepalm">Facepalm</option><option value="referee_shocked">Espanto</option><option value="referee_clap">Aplauso</option><option value="referee_concerned">Preocupação</option><option value="referee_approval">Aprovação</option><option value="referee_reaction_light">Reação leve</option><option value="referee_reaction_medium">Reação moderada</option><option value="referee_reaction_strong">Reação forte</option></select></label>
             <label>Marcas do jogador <select data-debug-wear-player><option value="auto">Automático</option><option>0</option><option>1</option><option>2</option><option>3</option></select></label><label>Marcas do rival <select data-debug-wear-bot><option value="auto">Automático</option><option>0</option><option>1</option><option>2</option><option>3</option></select></label>

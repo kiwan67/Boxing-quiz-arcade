@@ -28,10 +28,18 @@ import {isTutorialActive,initializeTutorialControls,updateTutorial} from './tuto
 import {preloadTutorialSprites} from './tutorialSprites.js';
 import { updateQuestionReview } from './qteView.js';
 import { isReadingQuestion } from './qte.js';
+import {initializePauseControls,syncPauseControls} from './pause.js';
+import {preloadProfessorSprites} from './professorSprites.js';
+import {updateProfessorAnimation} from './professorAnimation.js';
+import {updateProfessorDebugAnimation} from './debug.js';
+import {updateProfessorPresentation} from './professorPresentation.js';
+import {preloadProfessorSadSprites} from './professorSadSprites.js';
 
 let initialized = false;
 
 export function update(realDelta) {
+    syncPauseControls();
+    if (gameState.phase === "paused") { pauseArenaSpeech(true); updateArenaAudio(gameState, 0, arenaLife); updatePunchControls(); updateDebugPanel(); return; }
     updateQuestionReview();
     if(isReadingQuestion()&&gameState.phase!=='paused'){
         updateCombat(realDelta);updateQuestionReview();updatePunchControls();updateDebugPanel();
@@ -47,7 +55,6 @@ export function update(realDelta) {
         updatePunchControls();updateDebugPanel();return;
     }
     const deltaTime = simulationDelta(realDelta);
-    if (gameState.phase === "paused") { pauseArenaSpeech(true); updateArenaAudio(gameState, 0, arenaLife); updatePunchControls(); updateDebugPanel(); return; }
     pauseArenaSpeech(Boolean(document.hidden));
     updateArenaLife(gameState, deltaTime);
     if (gameState.phase === "match_intro") {
@@ -64,11 +71,18 @@ export function update(realDelta) {
         return;
     }
     gameState.gameTime += deltaTime;
+    const professorFrozen=['counter_rush_cutscene','counter_rush_flash'].includes(gameState.playerCombat.state);
     updateCombat(deltaTime);
     updateQuestionReview();
     if(isReadingQuestion()){updatePunchControls();updateDebugPanel();return;}
     if(gameState.phase===KNOCKOUT_CINEMATIC){updateWear(gameState,0);updateArenaEffects(gameState,0,characters);updatePunchControls();updateDebugPanel();return;}
     updateRefereeExpressions(gameState, deltaTime);
+    // A frame which ends the cinematic still belongs to its frozen time span.
+    if(!professorFrozen){
+        updateProfessorAnimation(gameState, deltaTime);
+        updateProfessorPresentation(gameState, deltaTime);
+        updateProfessorDebugAnimation(gameState, deltaTime);
+    }
     updateWear(gameState, deltaTime);
     updateHUD(gameState, deltaTime);
     updateCharacters(deltaTime);
@@ -100,8 +114,12 @@ export function initializeGame() {
     initializeTutorialControls();
     initializePunchControls();
     initializeDebugPanel();
+    // Optional asset: a missing professor sheet must never delay the game.
+    preloadProfessorSprites();
+    preloadProfessorSadSprites();
     const loads = [preloadFighterSprites(), preloadCeremonySprites(), preloadRefereeReactions(), preloadKnockoutSprites(),preloadTutorialSprites()].filter(Boolean);
     initializeLobby(document, loads.length ? Promise.all(loads) : null);
+    initializePauseControls(document);
     initialized = true;
 
     // Não contabiliza o período em que a aba permanece oculta.

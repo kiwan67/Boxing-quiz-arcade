@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>Professor — prévia da subida</title>
+ <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+ <main>
+  <p class="eyebrow">BOXING QUIZ ARCADE · PRÉVIA DE ARTE</p>
+  <h1>Subida do professor</h1>
+  <p>Oito poses para aprovação. Use os controles para comparar braços, pernas e tronco.</p>
+  <p id="status" role="status">Carregando os PNGs…</p>
+  <section class="toolbar" aria-label="Controles da animação">
+   <button id="play" disabled>REPRODUZIR</button>
+   <button id="previous" disabled aria-label="Quadro anterior">◀ ANTERIOR</button>
+   <button id="next" disabled aria-label="Próximo quadro">PRÓXIMO ▶</button>
+   <button id="restart" disabled>RECOMEÇAR</button>
+   <label>Velocidade <select id="speed"><option value="1">1 quadro/s</option><option value="2" selected>2 quadros/s</option><option value="4">4 quadros/s</option><option value="6">6 quadros/s</option></select></label>
+   <label><input type="checkbox" id="repeat"> Repetir</label>
+   <label>Fundo <select id="background"><option value="grid">Quadriculado</option><option value="light">Claro</option><option value="dark">Escuro</option></select></label>
+  </section>
+  <p class="hint">Espaço: reproduzir/pausar · ← e →: avançar um quadro · clicar nas miniaturas: selecionar e pausar.</p>
+  <section class="viewer" aria-label="Quadro ampliado">
+   <div class="surface"><canvas id="stage" width="1024" height="1024" aria-label="Professor subindo, quadro selecionado"></canvas></div>
+   <div><h2 id="frame-number">QUADRO 1 / 8</h2><h3 id="pose-name"></h3><p id="pose-description"></p><p id="dimensions"></p><a id="original" href="frame_01.png" target="_blank" rel="noopener">Abrir PNG original</a></div>
+  </section>
+  <h2>Comparar as poses</h2>
+  <div id="filmstrip" class="filmstrip"></div>
+  <details>
+   <summary>Sprites aprovados usados como referência</summary>
+   <div class="references"><img src="../professor_caminhando_lado_v2.png" alt="Referência aprovada de caminhada lateral"><img src="../professor_observando_v2.png" alt="Referência aprovada do rosto e postura frontal"></div>
+  </details>
+  <footer>Esta página é independente. Os novos PNGs ainda não são utilizados pelo jogo.</footer>
+ </main>
+ <script src="frames.js"></script>
+ <script src="preview.js"></script>
+</body>
+</html>

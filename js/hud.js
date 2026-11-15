@@ -43,10 +43,10 @@ const barTrails = { player: 100, enemy: 100 };
 const trailDelay = { player: 0, enemy: 0 };
 const lastHP = { player: 100, enemy: 100 };
 
-export function resetHUDVisuals() {
-    trailDelay.player = trailDelay.enemy = 0; lastHP.player = lastHP.enemy = 100;
+export function resetHUDVisuals(state) {
+    trailDelay.player = trailDelay.enemy = 0; lastHP.player = 100; lastHP.enemy = state?.enemyMaxHealth ?? 100;
     barTrails.player = 100;
-    barTrails.enemy = 100;
+    barTrails.enemy = lastHP.enemy;
 }
 
 export function updateHUD(state, deltaTime) {
@@ -116,13 +116,14 @@ export function initializeHUD() {
     hudFrame = cache;
 }
 
-export function drawHealthBar(ctx, x, y, width, height, health, trailHealth = health, reversed = false) {
-    const percent = Number.isFinite(health) ? Math.max(0, Math.min(100, health)) : 0;
+export function drawHealthBar(ctx, x, y, width, height, health, trailHealth = health, reversed = false, maxHealth = 100) {
+    const maximum = Number.isFinite(maxHealth) && maxHealth > 0 ? maxHealth : 100;
+    const percent = Number.isFinite(health) ? Math.max(0, Math.min(100, health / maximum * 100)) : 0;
     const filled = Math.round((width - 6) * percent / 100);
     rect(ctx, "#080f20", x, y, width, height);
     rect(ctx, "#71899f", x + 1, y + 1, width - 2, height - 2);
     rect(ctx, "#29263a", x + 3, y + 3, width - 6, height - 6);
-    const trail = Math.round((width - 6) * Math.max(percent, Math.min(100, trailHealth)) / 100);
+    const trail = Math.round((width - 6) * Math.max(percent, Math.min(100, trailHealth / maximum * 100)) / 100);
     if (trail > filled) rect(ctx, "#c94351", reversed ? x + width - 3 - trail : x + 3 + filled, y + 3, trail - filled, height - 6);
     if (filled === 0) return;
     const start = reversed ? x + width - 3 - filled : x + 3;
@@ -158,7 +159,7 @@ export function drawHUD(ctx, gameState) {
     drawName(ctx, hudConfig.playerName, 62, "left");
     drawName(ctx, hudConfig.enemyName, 578, "right");
     drawHealthBar(ctx, 62, 32, 202, 16, gameState.playerHealth, barTrails.player);
-    drawHealthBar(ctx, 376, 32, 202, 16, gameState.enemyHealth, barTrails.enemy, true);
+    drawHealthBar(ctx, 376, 32, 202, 16, gameState.enemyHealth, barTrails.enemy, true, gameState.enemyMaxHealth);
     const seconds = Math.floor(Math.max(0, gameState.gameTime));
     const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
     drawPixelText(ctx, clock, 320, 14, 2, "#f7ecd0", "center");

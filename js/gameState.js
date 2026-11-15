@@ -1,13 +1,18 @@
 import { createPunchState } from "./punchTypes.js";
+import { createProfessorState } from './professorEasterEgg.js';
 
 export function createInitialGameState(matchId = 0) {
     return {
         matchId,
+        professorEasterEgg: createProfessorState(),
         playerHealth: 100,
         enemyHealth: 100,
+        enemyMaxHealth: 100,
+        botBalance: { healthMultiplier: 1, damageDealtMultiplier: 1, damageTakenMultiplier: 1 },
         round: 1,
         gameTime: 0,
         phase: "idle",
+        phaseBeforePause: null,
         matchResult: null,
         matchIntro: null,
         pendingRiskBonus: 0,

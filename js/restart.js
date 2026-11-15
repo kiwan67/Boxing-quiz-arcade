@@ -16,7 +16,7 @@ export function restartFight() {
     resetRefereeExpressions(gameState.matchId);
     resetWear(gameState.matchId);
     resetCharacters();
-    resetHUDVisuals();
+    resetHUDVisuals(gameState);
     updatePunchControls();
     updateDebugPanel();
 }

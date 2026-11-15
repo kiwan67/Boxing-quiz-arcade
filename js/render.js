@@ -7,6 +7,9 @@ import { drawReferee } from './refereeView.js';
 import { arenaLife } from './arenaLife.js';
 import {isTutorialActive} from './tutorial.js';
 import {drawTutorial} from './tutorialView.js';
+import {drawProfessor,drawProfessorDebug,drawProfessorAtSide} from './professorView.js';
+import {debugState} from './debug.js';
+import {drawProfessorDialogue} from './professorDialogueView.js';
 let canvas;
 import { createScenery, drawArenaScene, drawFighterShadow } from "./scenery.js";
 import { drawCameraFlashes, drawArenaLighting } from "./arenaLife.js";
@@ -26,6 +29,10 @@ import { initializeCounterRushEffects, syncCounterRushEffects, drawCounterRushFl
 import { counterRushCinematicFrame, applyCounterRushCamera, drawCounterRushBackgroundShade, drawCounterRushPlayerHighlight, drawCounterRushCinematicOverlay } from "./counterRushCutscene.js";
 let context;
 let scenery;
+function drawRingsideProfessor(ctx,rear){
+    if(drawProfessorAtSide(ctx,gameState,rear))return true;
+    drawProfessor(ctx,gameState,'OUTSIDE');
+}
 
 export function initializeRenderer(gameCanvas) {
     if (!(gameCanvas instanceof HTMLCanvasElement)) {
@@ -47,6 +54,8 @@ export function initializeRenderer(gameCanvas) {
 }
 
 export function render() {
+    // Keep the exact last frame, including intro/cutscene cameras, while paused.
+    if(gameState.phase==='paused')return;
     if(isTutorialActive()){drawTutorial(context);return;}
     syncCounterRushEffects();
     if (gameState.phase === "match_intro") { drawMatchIntro(context, gameState, scenery); return; }
@@ -67,13 +76,15 @@ export function render() {
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.translate(shake, 0);
     }
-    drawArenaScene(context,scenery,currentEffects ? arenaEffects.time : 0,currentEffects ? arenaEffects.crowdTime : 0);
+    const professorCamera=context.getTransform?.();
+    drawArenaScene(context,scenery,currentEffects ? arenaEffects.time : 0,currentEffects ? arenaEffects.crowdTime : 0,null,drawRingsideProfessor);
     drawCameraFlashes(context);
     drawArenaLighting(context);
     if (cinematic) drawCounterRushBackgroundShade(context, cinematic);
     if (currentEffects) drawRushLight(context);
     drawFighterShadow(context, CHARACTER_LAYOUT.opponent.x + characters.opponent.torsoX * CHARACTER_LAYOUT.opponent.scale, 272, 46);
     drawFighterShadow(context, CHARACTER_LAYOUT.player.x + characters.player.torsoX * CHARACTER_LAYOUT.player.scale, 358, 92);
+    drawProfessor(context,gameState,'INSIDE');
     drawOpponent(context);
     drawReferee(context, refereeBackgroundFrame(arenaLife));
     if (cinematic) drawCounterRushPlayerHighlight(context, cinematic);
@@ -86,11 +97,13 @@ export function render() {
 
     if (currentEffects) drawContactFlash(context);
     drawHUD(context, gameState);
+    drawProfessorDebug(context,gameState,debugState.enabled);
     drawAttackFeedback(context, gameState);
     drawDefense(context, gameState);
     drawCooldown(context, gameState);
     drawCounterRush(context, gameState);
     drawQTE(context, gameState);
+    drawProfessorDialogue(context,gameState,professorCamera);
 }
 
 

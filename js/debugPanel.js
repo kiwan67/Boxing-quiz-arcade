@@ -12,8 +12,10 @@ import { setDebugGameSpeed } from "./debug.js";
 import { getGameSpeed } from "./simulationClock.js";
 import { queueDebugQuestion, simulateDebugAnswer } from './debugQuestions.js';
 import { QUESTION_COUNT } from './questions.js';
+import {setProfessorDebugMode,previewProfessorPresentation} from './debug.js';
+import {professorRenderInfo} from './professorView.js';
 
-let root, keyboard, controls, values = [], bindings = [];
+let root, keyboard, controls, toggleButton, values = [], bindings = [];
 function bind(target, name, listener) {
     target.addEventListener(name, listener);
     bindings.push([target, name, listener]);
@@ -22,6 +24,9 @@ function onKey(event) {
     if (event.key !== "F3" && event.code !== "F3") return;
     event.preventDefault();
     if (event.repeat) return;
+    toggleDebug();
+}
+function toggleDebug() {
     setDebugEnabled(!debugState.enabled);
     if (!debugState.enabled) previewRefereeExpression(null);
     updateDebugPanel();
@@ -35,6 +40,18 @@ export function initializeDebugPanel(target = document.getElementById("debug-pan
     if (root && root !== target) root.hidden = true;
     root = target; keyboard = keyTarget;
     const find = name => root.querySelector(`[data-debug-${name}]`);
+    toggleButton=keyTarget.getElementById?.('debug-toggle');
+    const repeatProfessor=find('professor-repeat');
+    if(repeatProfessor)bind(repeatProfessor,'click',()=>{setProfessorDebugMode('entry');updateDebugPanel();});
+    for(const action of ['appearance','entry','strong','defense','sequence','sadExit']){
+        const button=root.querySelector(`[data-debug-professor-action="${action}"]`);
+        if(button)bind(button,'click',()=>{previewProfessorPresentation(action);updateDebugPanel();});
+    }
+    if(toggleButton)bind(toggleButton,'click',toggleDebug);
+    for(const [name,mode] of [['professor','outside'],['professor-entry','entry'],['professor-inside','inside']]){
+        const control=find(name);
+        if(control)bind(control,'change',()=>{setProfessorDebugMode(control.checked?mode:null);updateDebugPanel();});
+    }
     controls = { body: find("body"), collapse: find("collapse"), side: find("side"), answers: find("answers"),
         perfect: find("perfect"), rush: find("rush"), sideValue: find("side-value"), answerValue: find("answer-value") };
     if (Object.values(controls).some(value => !value)) { controls = null; return; }
@@ -95,6 +112,14 @@ export function initializeDebugPanel(target = document.getElementById("debug-pan
 
 export function updateDebugPanel() {
     if (!root || !controls) return;
+    toggleButton?.setAttribute('aria-expanded',String(debugState.enabled));
+    for(const [name,mode] of [['professor','outside'],['professor-entry','entry'],['professor-inside','inside']]){
+        const control=root.querySelector(`[data-debug-${name}]`);
+        if(control){
+            control.checked=debugState.professorMode===mode;
+            control.disabled=!debugState.enabled||!['idle','paused'].includes(gameState.phase)||Boolean(gameState.matchResult);
+        }
+    }
     const speed = getGameSpeed();
     const slider = root.querySelector("[data-debug-speed]");
     if (slider) slider.value = String(speed);
@@ -113,6 +138,14 @@ export function updateDebugPanel() {
         return;
     }
     root.hidden = false;
+    const professorInfo=root.querySelector('[data-debug-professor-info]');
+    if(professorInfo){
+        const info=professorRenderInfo(gameState);
+        professorInfo.textContent=info?`ESTADO: ${info.stage} · ANIMAÇÃO: ${info.animation} · FRAME: ${info.frame}/${info.totalFrames}\nETAPA: ${info.entryStep} · SITUAÇÃO: ${info.entryStatus} · POSIÇÃO DOS PÉS: ${info.positionZone}\nFRAME SUBIDA: ${info.climbFrame??'—'}/${info.climbTotalFrames}\nFPS CAMINHADA: ${info.walkingFrameFrequency.toFixed(2)} · DURAÇÃO ETAPA: ${info.stageDuration===null?'CONTÍNUA':info.stageDuration.toFixed(3)+' s'}\nARQUIVO: ${info.file} · CARREGADO: ${info.loaded?'SIM':'NÃO'}\nRECORTE: ${info.crop}\nESCALA: ${info.scale.toFixed(4)} · X: ${info.x.toFixed(2)} · Y (PÉS): ${info.y.toFixed(2)}\nCAMADA: ${info.layer}\nLATERAL: ${info.availableWidth.toFixed(0)} PX LIVRES / ${info.requiredWidth.toFixed(1)} PX NECESSÁRIOS${info.orderWarning?'\nORDEM INVÁLIDA: '+info.orderWarning:''}`:'PROFESSOR INVISÍVEL';
+        if(info)professorInfo.textContent+=`\nFALA: ${info.dialogue??'—'} · SAÍDA: ${info.departure?'SIM':'NÃO'} · OPACIDADE: ${info.alpha.toFixed(2)}${info.missingSad?'\nAVISO: FOLHA TRISTE AUSENTE; POSE ORIGINAL PRESERVADA':''}`;
+    }
+    const repeatProfessor=root.querySelector('[data-debug-professor-repeat]');
+    if(repeatProfessor)repeatProfessor.disabled=!['idle','paused'].includes(gameState.phase)||Boolean(gameState.matchResult);
     controls.body.hidden = !debugState.expanded;
     controls.collapse.textContent = debugState.expanded ? "RECOLHER" : "EXPANDIR";
     controls.collapse.setAttribute("aria-expanded", String(debugState.expanded));

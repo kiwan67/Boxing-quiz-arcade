@@ -1,0 +1,9 @@
+# Additional sad-exit sheet, v1
+
+Generated with the built-in `image_gen` tool. Reference images only:
+`professor_caminhando_lado_v2.png`, `professor_observando_v2.png`.
+The reference files and all entry frames were preserved.
+
+Prompt:
+
+Use case: stylized-concept. Create ONE NEW separate transparent pixel-art game sprite sheet for the SAME approved adult male professor in the two reference images (reference only; DO NOT modify or replace them). Match 16-bit detailed pixel-art face quality and proportions: short curly black hair, rectangular black glasses, beard, black puffer jacket, white cross necklace, black trousers, light sneakers. Output exactly EIGHT full-body sprites in a precise FOUR COLUMNS by TWO ROWS uniform grid, one centered isolated figure per equal square cell. Entire character visible with transparent gutters, identical head size and standing foot baseline in all cells, no labels, no text, no background, no grid lines, real alpha transparency. Top row left to right: (1) front three-quarter view arms crossed as in reference, starting to uncross, slight disappointed expression; (2) arms now down at sides, shoulders droop, head tilted gently down, disappointed not angry; (3) same lowered head and slumped shoulders rotated three-quarter toward RIGHT; (4) standing in RIGHT-facing profile, hands relaxed hanging at sides, eyes down, preparing to walk. Bottom row left to right: FOUR successive genuinely different coherent slow sad RIGHT-facing walking-cycle poses, short strides, lowered head, slumped shoulders, arms hanging with very small natural swing. Normal adult walking, both knees never raised high, no climbing, no jumping, no crouching, no caricature, no tears. Keep original character identity, jacket, beard, glasses, cross, shoe colors and pixelated crisp outlines throughout, all eight poses same scale. One game-ready sprite sheet, not a scene.

@@ -13,6 +13,7 @@ import { requestQTEPunch as requestPunch } from './helpers/fight.mjs';
 import { finishCounterRushIntroForTest } from "./helpers/fight.mjs";
 import { selectPunch } from "../js/punches.js";
 import { getGameSpeed } from "../js/simulationClock.js";
+import {professorFrame} from '../js/professorView.js';
 
 class Element extends EventTarget {
     textContent = ""; hidden = false; checked = false; disabled = false; value = "normal"; attrs = new Map();
@@ -22,8 +23,12 @@ class Element extends EventTarget {
 function panel() {
     const root = new Element(); root.hidden = true;
     const keyboard = new EventTarget();
+    const toggle=new Element();keyboard.getElementById=id=>id==='debug-toggle'?toggle:null;
     const parts = Object.fromEntries(["ko", "ko-target", "ko-punch", "body", "collapse", "side", "answers", "perfect", "rush", "chain", "side-value", "answer-value", "speed", "slow", "speed-10", "speed-25", "speed-50", "speed-75", "speed-100"].map(key => [key, new Element()]));
     const names = ["gameSpeed", "combat", "opponent", "selected", "turns", "cooldown", "playerHP", "enemyHP", "qte", "counterRush", "rushTime", "cutscene", "cutsceneTime", "cutsceneNext", "stunned", "stunTime", "override", "perfect"];
+    parts.professor=new Element();
+    parts['professor-entry']=new Element();parts['professor-inside']=new Element();
+    parts['professor-info']=new Element();parts['professor-repeat']=new Element();
     const outputs = Object.fromEntries(names.map(name => [name, Object.assign(new Element(), { dataset: { debugValue: name } })]));
     for (const name of ["commonAttackCount", "nextCommonQuestion", "chainDifficulty", "chainMultiplier", "stunSource", "stunAdditional", "stunTotal", "stunRemaining"]) {
         outputs[name] = Object.assign(new Element(), { dataset: { debugValue: name } });
@@ -36,7 +41,7 @@ function panel() {
     root.querySelector = selector => parts[selector.slice(12, -1)];
     root.querySelectorAll = () => Object.values(outputs);
     initializeDebugPanel(root, keyboard);
-    return { root, keyboard, parts, outputs };
+    return { root, keyboard, parts, outputs, toggle };
 }
 function f3(keyboard, repeat = false) {
     const event = new Event("keydown", { cancelable: true });
@@ -44,6 +49,42 @@ function f3(keyboard, repeat = false) {
     keyboard.dispatchEvent(event); return event;
 }
 const fire = (element, name) => element.dispatchEvent(new Event(name, { cancelable: true }));
+
+test('toque abre o mesmo painel e força apenas a apresentação; desligar restaura o estado real',()=>{
+ const {root,toggle,parts,keyboard}=panel();const before=JSON.stringify(gameState);
+ fire(toggle,'click');assert.equal(root.hidden,false);assert.equal(toggle.getAttribute('aria-expanded'),'true');
+ parts.professor.checked=true;fire(parts.professor,'change');
+ assert.equal(professorFrame(gameState).layer,'OUTSIDE');assert.equal(professorFrame(gameState).clip,'observing');
+ assert.equal(JSON.stringify(gameState),before);
+ parts.professor.checked=false;fire(parts.professor,'change');assert.equal(professorFrame(gameState),null);
+ parts.professor.checked=true;fire(parts.professor,'change');f3(keyboard);
+ assert.equal(debugState.professorForced,false);assert.equal(professorFrame(gameState),null);
+ assert.equal(JSON.stringify(gameState),before);
+});
+
+test('as três opções por toque são exclusivas e não alteram a partida',()=>{
+ const {toggle,parts}=panel();fire(toggle,'click');const before=JSON.stringify(gameState);
+ for(const [name,mode] of [['professor','outside'],['professor-entry','entry'],['professor-inside','inside']]){
+  parts[name].checked=true;fire(parts[name],'change');assert.equal(debugState.professorMode,mode);
+  for(const other of ['professor','professor-entry','professor-inside'])assert.equal(parts[other].checked,other===name);
+  assert.equal(JSON.stringify(gameState),before);
+ }
+ assert.equal(professorFrame(gameState).layer,'INSIDE');
+ parts['professor-inside'].checked=false;fire(parts['professor-inside'],'change');
+ assert.equal(professorFrame(gameState),null);assert.equal(JSON.stringify(gameState),before);
+});
+
+test('debug informa arquivo, frame, escala e coordenadas e repete entrada sem progresso real',()=>{
+ const {toggle,parts}=panel();fire(toggle,'click');const before=JSON.stringify(gameState);
+ parts['professor-inside'].checked=true;fire(parts['professor-inside'],'change');
+ assert.match(parts['professor-info'].textContent,/professor_observando_v2.png/);
+ assert.match(parts['professor-info'].textContent,/FRAME: 1/);
+ assert.match(parts['professor-info'].textContent,/ESCALA: .* X: .* Y \(PÉS\):/);
+ fire(parts['professor-repeat'],'click');assert.equal(professorFrame(gameState).stage,'prepare');
+ assert.equal(debugState.professorMode,'entry');
+ fire(parts['professor-repeat'],'click');assert.equal(professorFrame(gameState).elapsed,0);
+ assert.equal(JSON.stringify(gameState),before);
+});
 
 test("slider e atalhos respondem imediatamente; F3 e reinício restauram velocidade", () => {
     const { keyboard, parts, outputs } = panel(); f3(keyboard);

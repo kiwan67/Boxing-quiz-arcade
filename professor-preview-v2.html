@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>Professor — prévia dos novos sprites</title>
+ <link rel="stylesheet" href="./assets/sprites/professor/preview-v2.css">
+</head>
+<body data-background="checker">
+ <main>
+  <header><p class="eyebrow">BOXING QUIZ ARCADE · PRÉVIA DE ARTE</p>
+   <h1>Professor · versão 2</h1>
+   <p>Novos sprites baseados nas fotografias. Esta página é independente do jogo; a versão em combate e a spritesheet antiga permanecem preservadas.</p>
+  </header>
+  <section class="toolbar" aria-label="Controles da prévia">
+   <button id="play" type="button">PAUSAR ANIMAÇÕES</button>
+   <button id="previous" type="button">← QUADRO</button><button id="next" type="button">QUADRO →</button>
+   <label>Velocidade <input id="speed" type="range" min=".25" max="1.5" step=".25" value="1"><output id="speed-value">1×</output></label>
+   <label>Fundo <select id="background"><option value="checker">Quadriculado</option><option value="light">Claro</option><option value="dark">Escuro</option></select></label>
+   <label>Altura de referência <select id="height"><option value="180">180 px</option><option value="270">270 px</option><option value="330" selected>330 px</option></select></label>
+  </section>
+  <p class="hint">Selecione uma animação para ampliar rosto, cabelo, óculos, barba e colar. Pause e use as setas para examinar cada quadro.</p>
+  <p id="status" role="status">Carregando os três arquivos PNG…</p>
+  <section id="animations" class="animations" aria-label="Três animações"></section>
+  <section class="details">
+   <article><h2>Rosto e colar em detalhe</h2><p id="detail-label">OBSERVANDO</p><div class="surface"><canvas id="face" width="320" height="280" aria-label="Ampliação do rosto e colar do professor"></canvas></div></article>
+   <article><h2>Comparação de proporções</h2><p>Professor a 171 px de referência e BOT original a 180 px. Nenhum sprite do lutador é alterado.</p>
+    <div class="surface"><canvas id="comparison" width="720" height="290" aria-label="Professor e BOT lado a lado, alinhados pelos pés"></canvas></div>
+    <div class="names"><span>PROFESSOR · PROPOSTA</span><span>BOT · REFERÊNCIA ORIGINAL</span></div>
+   </article>
+  </section>
+  <section><h2>Quadros da animação selecionada</h2><div id="filmstrip" class="filmstrip"></div></section>
+  <section class="references"><h2>Fotografias usadas</h2>
+   <a href="./assets/images/menu/references/professor_ref_01.png" target="_blank" rel="noopener"><img src="./assets/images/menu/references/professor_ref_01.png" alt="Primeira referência: rosto, cabelo e colar"><span>professor_ref_01.png</span></a>
+   <a href="./assets/images/menu/references/professor_ref_02.png" target="_blank" rel="noopener"><img src="./assets/images/menu/references/professor_ref_02.png" alt="Segunda referência: rosto com óculos e jaqueta"><span>professor_ref_02.png</span></a>
+  </section>
+  <footer><p>Quatro quadros por animação, células uniformes de 627 × 627 px, PNG com canal alfa real. Arte gerada com assistência de IA: avaliar semelhança do rosto e continuidade dos passos antes de aprovar a integração.</p><a href="./assets/sprites/professor/PROMPTS_V2.md">Referências, prompts e notas da criação</a></footer>
+ </main>
+ <script src="./assets/sprites/professor/preview-v2-data.js"></script>
+ <script src="./assets/sprites/professor/preview-v2.js"></script>
+</body>
+</html>

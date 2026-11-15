@@ -122,7 +122,7 @@ test("lobby inicial NORMAL, três opções e início somente pelo botão", () =>
     assert.equal(canvas.hidden, false);
     assert.equal(controls.hidden, false);
     assert.equal(gameState.playerHealth, 100);
-    assert.equal(gameState.enemyHealth, 100);
+    assert.equal(gameState.enemyHealth, 150);
     assert.equal(gameState.commonAttackCount, 0);
     assert.equal(simulationDelta(0.04), 0.04);
     assert.match(readFileSync(new URL("../index.html", import.meta.url), "utf8"), /id="game-canvas" width="640" height="360"/);
@@ -139,7 +139,7 @@ test("revanche mantém a dificuldade e voltar ao lobby permite escolher outra", 
     finishMatchIntro();
     assert.equal(gameState.phase, "idle");
     assert.equal(gameState.difficulty, "hard");
-    assert.equal(gameState.enemyHealth, 100);
+    assert.equal(gameState.enemyHealth, 150);
     assert.deepEqual(gameState.offensiveAI.playerHistory, []);
     applyImpactDamage("player", 100, "loss");
     (updateKnockout(gameState,KO_DURATION), updateCeremony)(gameState, 5);
@@ -281,7 +281,7 @@ test("retorno ao lobby apos a cerimonia funciona para ambos os vencedores", () =
         gameState.difficulty = "hard";
         restartFight();
         const { panel, canvas, controls, start, clickResult } = mountLobby();
-        applyImpactDamage(target, 100, "ceremony-lobby");
+        applyImpactDamage(target, 1000, "ceremony-lobby");
         const oldMatchId = gameState.matchId;
         (updateKnockout(gameState,KO_DURATION), updateCeremony)(gameState, 4);
         clickResult(LOBBY_BUTTON);
@@ -308,7 +308,7 @@ test("retorno ao lobby apos a cerimonia funciona para ambos os vencedores", () =
         assert.equal(canvas.hidden, false);
         assert.equal(controls.hidden, false);
         assert.equal(gameState.playerHealth, 100);
-        assert.equal(gameState.enemyHealth, 100);
+        assert.equal(gameState.enemyHealth, 150);
     }
 });
 

@@ -21,6 +21,10 @@ test('plateia animada precede a camada traseira transparente, que precede os ato
   drawArenaScene({drawImage(image){calls.push(image);},fillRect(){calls.push('spectator');}},scenery,.2,1,.2);
   assert.equal(calls[0],scenery);assert.equal(calls.at(-1),rear);
   assert.ok(calls.slice(1,-1).every(call=>call==='spectator'));
+  calls.length=0;
+  drawArenaScene({drawImage(image){calls.push(image);},fillRect(){calls.push('spectator');}},scenery,.2,1,.2,()=>calls.push('professor'));
+  assert.equal(calls[0],scenery);assert.equal(calls.at(-2),'professor');assert.equal(calls.at(-1),rear);
+  assert.ok(calls.slice(1,-2).every(call=>call==='spectator'),'professor stays in front of the audience');
   assert.equal(canvases.length,2,'frames reuse both caches without allocating another canvas');
  }finally{globalThis.document=previous;}
 });

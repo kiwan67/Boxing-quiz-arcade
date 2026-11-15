@@ -24,7 +24,7 @@ export function isDefenseActive() {
 
 export function beginDefense() {
     if (isReadingQuestion()) return false;
-    if (isMatchOver() || gameState.phase === "lobby" || gameState.phase === "match_intro" || gameState.stun.remaining > 0) return false;
+    if (isMatchOver() || ['paused','lobby','match_intro'].includes(gameState.phase) || gameState.stun.remaining > 0) return false;
     const defense = gameState.defense;
     defense.counterId = gameState.counterAttack.questionId;
     defense.expectedSide = defenseSideForCounterArm(gameState.counterAttack.side);
@@ -48,7 +48,7 @@ function finishDirection(side) {
 }
 
 export function selectDefenseSide(side) {
-    if (isMatchOver() || gameState.playerCombat.state !== "defense_direction_qte"
+    if (gameState.phase === 'paused' || isMatchOver() || gameState.playerCombat.state !== "defense_direction_qte"
         || (side !== "left" && side !== "right")) return false;
     finishDirection(side);
     return true;
@@ -119,7 +119,7 @@ export function updateDefense(deltaTime) {
 export function registerDefenseImpact(event) {
     const defense = gameState.defense;
     const result = defense.result;
-    if (isMatchOver() || !result || result.counterId !== event.questionId || result.impactRegistered) return;
+    if (gameState.phase === 'paused' || isMatchOver() || !result || result.counterId !== event.questionId || result.impactRegistered) return;
     result.impactRegistered = true;
     result.impactId = event.id;
     result.impactAt = event.at;

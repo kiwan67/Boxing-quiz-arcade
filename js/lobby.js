@@ -53,7 +53,7 @@ export function updateLobby() {
 }
 
 export function returnToLobby() {
-    if (gameState.phase !== "victory" && gameState.phase !== "defeat") return;
+    if (!['victory','defeat','paused'].includes(gameState.phase)) return;
     restartFight();
     gameState.phase = "lobby";
     if(view?.menu)view.menu.screen='main';

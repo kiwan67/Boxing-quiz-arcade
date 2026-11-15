@@ -2,9 +2,13 @@ import { startKnockout, resetKnockout, KNOCKOUT_CINEMATIC } from './knockout.js'
 import { gameState, resetGameState } from "./gameState.js";
 import { PUNCH_TYPES, DEFAULT_PUNCH } from "./punchTypes.js";
 import { resetCounterRushEffects } from "./counterRushEffects.js";
-import { clearDebugForces } from "./debug.js";
+import { clearDebugForces, logProfessorDebug } from "./debug.js";
 import { resetSimulationClock } from "./simulationClock.js";
 import { stopCombatAudio } from "./audio.js";
+import { endProfessorEasterEgg } from './professorEasterEgg.js';
+import { initializeQuestionCycle } from './questions.js';
+import { activeDifficulty } from './difficulty.js';
+import {emitProfessorEvent} from './professorEvents.js';
 
 export const MAX_HEALTH = 100;
 export const PLAYER_BASE_DAMAGE = PUNCH_TYPES[DEFAULT_PUNCH].damage;
@@ -45,7 +49,7 @@ function cancelPendingActions() {
 
 export function checkMatchEnd(cinematic = false, target = null) {
     gameState.playerHealth = Math.max(0, Math.min(MAX_HEALTH, gameState.playerHealth));
-    gameState.enemyHealth = Math.max(0, Math.min(MAX_HEALTH, gameState.enemyHealth));
+    gameState.enemyHealth = Math.max(0, Math.min(gameState.enemyMaxHealth, gameState.enemyHealth));
     if (isMatchOver()) return true;
     if (gameState.playerHealth > 0 && gameState.enemyHealth > 0) return false;
     gameState.phase = gameState.playerHealth <= 0 ? "defeat" : "victory";
@@ -58,20 +62,24 @@ export function checkMatchEnd(cinematic = false, target = null) {
         impactDirection: (loser === 'bot' ? attack?.arm || gameState.playerCombat.arm : gameState.counterAttack.side) === 'right' ? -1 : 1,
         special: loser === 'bot' ? attack?.kind === 'counter_rush' : gameState.counterAttack.source === 'counter_chain' });
     gameState.matchResult = result;
+    endProfessorEasterEgg(gameState);
     if(cinematic) startKnockout(gameState,result);
     cancelPendingActions();
     return true;
 }
 
 export function applyImpactDamage(target, amount, impactId, matchId = gameState.matchId, impactAge = 0, hitReaction = true) {
-    if (gameState.phase === "match_intro" || matchId !== gameState.matchId || isMatchOver() || !impactId
+    if (['paused','lobby','match_intro'].includes(gameState.phase) || matchId !== gameState.matchId || isMatchOver() || !impactId
         || (target !== "player" && target !== "enemy") || !Number.isFinite(amount) || amount < 0) return 0;
     const key = `${gameState.matchId}:${target}:${impactId}`;
     if (appliedImpacts.has(key)) return 0;
     appliedImpacts.add(key);
     const healthKey = target === "player" ? "playerHealth" : "enemyHealth";
-    const before = Math.max(0, Math.min(MAX_HEALTH, gameState[healthKey]));
-    gameState[healthKey] = Math.max(0, before - amount);
+    const maximum = target === 'player' ? MAX_HEALTH : gameState.enemyMaxHealth;
+    const before = Math.max(0, Math.min(maximum, gameState[healthKey]));
+    // Every normal/special impact passes here after block/defense reductions.
+    const multiplier = target === 'player' ? gameState.botBalance.damageDealtMultiplier : gameState.botBalance.damageTakenMultiplier;
+    gameState[healthKey] = Math.max(0, before - amount * multiplier);
     const applied = before - gameState[healthKey];
     if (applied > 0 && hitReaction) gameState.reactions[target].remaining = Math.max(0, HIT_REACTION_TIME - impactAge);
     checkMatchEnd(applied > 0 && hitReaction, target);
@@ -80,7 +88,7 @@ export function applyImpactDamage(target, amount, impactId, matchId = gameState.
 
 export function resolvePlayerImpact(impactAge = 0) {
     const result = gameState.lastAttackResult;
-    if (isMatchOver() || !result || result.outcome === "failed_qte" || result.impactResolved) return false;
+    if (gameState.phase === 'paused' || isMatchOver() || !result || result.outcome === "failed_qte" || result.impactResolved) return false;
     result.impactResolved = true;
     if (result.kind === "counter_rush") gameState.counterChain.lastResult = result.outcome;
     const damaging = result.outcome === "hit" || result.outcome === "blocked";
@@ -88,6 +96,9 @@ export function resolvePlayerImpact(impactAge = 0) {
     result.damageApplied = damaging
         ? applyImpactDamage("enemy", damage,
             `player-${result.questionId}`, gameState.matchId, impactAge, result.outcome !== "blocked") : 0;
+    if(result.outcome==='hit'&&result.damageApplied>0)emitProfessorEvent(gameState,'professor_connected_hit',{
+        punchType:result.punchType,chainCount:gameState.counterChain.active?gameState.counterChain.count:0
+    });
     return true;
 }
 
@@ -103,6 +114,11 @@ export function resetMatch() {
     appliedImpacts.clear();
     resetKnockout();
     resetGameState();
+    const {healthMultiplier,damageDealtMultiplier,damageTakenMultiplier}=activeDifficulty();
+    gameState.botBalance={healthMultiplier,damageDealtMultiplier,damageTakenMultiplier};
+    gameState.enemyHealth=gameState.enemyMaxHealth=MAX_HEALTH*healthMultiplier;
+    initializeQuestionCycle();
+    logProfessorDebug('EASTER EGG REINICIADO');
     resetCounterRushEffects();
 }
 

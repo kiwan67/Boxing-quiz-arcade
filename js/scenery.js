@@ -1,3 +1,4 @@
+import {REAR_ROPES} from './ringGeometry.js';
 ﻿import { arenaLife, crowdSectorEnergy } from "./arenaLife.js";
 // Cena fixa em 640 Ã— 360. Elementos estÃ¡ticos sÃ£o compostos uma Ãºnica vez.
 function rect(ctx, color, x, y, w, h) {
@@ -34,10 +35,13 @@ const movingSpectators = [];
 // The rear ring occludes spectators, but must stay behind every ring actor.
 const rearRingLayers = new WeakMap();
 export function rearRingLayer(scenery) { return rearRingLayers.get(scenery); }
-export function drawArenaScene(ctx, scenery, time, cheer=0, announcementTime=null) {
+export function drawArenaScene(ctx, scenery, time, cheer=0, announcementTime=null, drawBehindRear=null) {
     ctx.drawImage(scenery,0,0);
     drawAudienceMotion(ctx,time,cheer,announcementTime);
     const rear=rearRingLayers.get(scenery);
+    // An actor crossing the ropes can composite disjoint portions of this cache.
+    // Returning true means every cache pixel was already drawn exactly once.
+    if(drawBehindRear?.(ctx,rear)===true)return;
     if(rear)ctx.drawImage(rear,0,0);
 }
 
@@ -183,12 +187,7 @@ function drawRearStructures(ctx) {
 }
 
 function drawRearRopes(ctx) {
-    const ropes = [
-        { y: 114, base: "#c94351", light: "#f17a78", shadow: "#812b43" },
-        { y: 141, base: "#d3dce0", light: "#ffffff", shadow: "#7f91a4" },
-        { y: 168, base: "#366fc5", light: "#70abe7", shadow: "#23467e" }
-    ];
-    for (const rope of ropes) {
+    for (const rope of REAR_ROPES) {
         rect(ctx, "#111c30", 48, rope.y - 1, 544, 9);
         rect(ctx, rope.base, 48, rope.y, 544, 6);
         rect(ctx, rope.light, 48, rope.y, 544, 2);

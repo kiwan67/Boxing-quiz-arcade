@@ -1,9 +1,9 @@
 import { gameState } from "./gameState.js";
 
 export const DIFFICULTIES = Object.freeze({
-    easy: Object.freeze({ label: "Fácil", profile: "Simples", min: 6, max: 9, accuracy: 0.65, dodge: 0.10, weights: Object.freeze([50, 30, 15, 5]) }),
-    normal: Object.freeze({ label: "Normal", profile: "Equilibrada", min: 4, max: 7, accuracy: 0.80, dodge: 0.15, weights: Object.freeze([35, 35, 20, 10]) }),
-    hard: Object.freeze({ label: "Difícil", profile: "Adaptativa", min: 3, max: 5, accuracy: 0.90, dodge: 0.20, weights: Object.freeze([25, 35, 25, 15]) })
+    easy: Object.freeze({ label: "Fácil", profile: "Simples", healthMultiplier: 1, damageDealtMultiplier: 0.9, damageTakenMultiplier: 1.1, min: 6, max: 9, accuracy: 0.65, dodge: 0.10, weights: Object.freeze([50, 30, 15, 5]) }),
+    normal: Object.freeze({ label: "Normal", profile: "Equilibrada", healthMultiplier: 1, damageDealtMultiplier: 1, damageTakenMultiplier: 1, min: 4, max: 7, accuracy: 0.80, dodge: 0.15, weights: Object.freeze([35, 35, 20, 10]) }),
+    hard: Object.freeze({ label: "Difícil", profile: "Adaptativa", healthMultiplier: 1.5, damageDealtMultiplier: 1.1, damageTakenMultiplier: 0.75, min: 3, max: 5, accuracy: 0.90, dodge: 0.20, weights: Object.freeze([25, 35, 25, 15]) })
 });
 
 const attacks = ["jab", "straight", "hook", "uppercut"];

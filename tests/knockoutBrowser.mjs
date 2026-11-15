@@ -20,6 +20,7 @@ const server = createServer(async (req, res) => {
     try {
         const path = resolve(root, '.' + new URL(req.url, 'http://local').pathname);
         if (!path.startsWith(root)) throw Error('path');
+        if(['missing','custom'].includes(menuFixture)&&/menu_background_\d+\.png$/.test(path)){res.writeHead(404).end();return;}
         if(path.endsWith('menu_background.png')&&menuFixture==='missing'){res.writeHead(404).end();return;}
         if(menuFixture==='carousel'&&path.includes('menu_background')){
             const fixture=path.endsWith('menu_background_01.png')?'referee-neutral.png':path.endsWith('menu_background_02.png')?'player-neutral.png':null;
@@ -113,9 +114,27 @@ try {
     },reload,async mode=>{menuFixture=mode;});
     await writeFile(resolve(artifacts,'menu-browser-results.json'),JSON.stringify(menuChecks,null,2));
     console.log('Menu, seleção, opções e fluxo de entrada aprovados.');
+    await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+    await call('Emulation.setTouchEmulationEnabled',{enabled:true});
+    await evaluate(`document.querySelector('[data-menu-credits-button]').click()`);
+    const creditsMobile=await evaluate(`(async()=>{
+        const panel=document.querySelector('[data-menu-credits]'),sprite=panel.querySelector('img');await sprite.decode();
+        const bounds=panel.getBoundingClientRect();
+        for(const child of panel.children){const r=child.getBoundingClientRect();if(r.left<bounds.left||r.right>bounds.right+1||r.top<bounds.top||r.bottom>bounds.bottom+1)throw Error('Mobile credits clipped');}
+        const r=panel.querySelector('[data-credits-back]').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};
+    })()`);
+    const creditsShot=await call('Page.captureScreenshot',{format:'png'});
+    await writeFile(resolve(artifacts,'credits-mobile.png'),Buffer.from(creditsShot.data,'base64'));
+    await call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[creditsMobile]});
+    await call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    assert.equal(await evaluate(`document.querySelector('[data-menu-credits]').hidden`),true,'Mobile back returns to menu');
+    await call('Emulation.setTouchEmulationEnabled',{enabled:false});
+    await call('Emulation.setDeviceMetricsOverride',{width:640,height:456,deviceScaleFactor:1,mobile:false});
+    if(!process.argv.includes('--credits-only')){
     const carouselChecks=await checkMenuCarousel(evaluate,reload,async mode=>{menuFixture=mode;});
     await writeFile(resolve(artifacts,'menu-carousel-browser-results.json'),JSON.stringify(carouselChecks,null,2));
     console.log('Carousel browser checks passed.');
+    }
     await call('Emulation.setDeviceMetricsOverride',{width:1000,height:760,deviceScaleFactor:1,mobile:false});
     if(!process.argv.includes('--menu-only')){
     await evaluate(`(async () => {

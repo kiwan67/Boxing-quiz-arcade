@@ -3,6 +3,8 @@ import { createQuestion } from "./questions.js";
 import { isMatchOver } from "./match.js";
 import { PUNCH_TYPES } from "./punchTypes.js";
 import { chainDifficulty } from "./chainRules.js";
+import { observeProfessorAnswer } from './professorEasterEgg.js';
+import { logProfessorAnswerDebug } from './debug.js';
 export const QTE_READING_SECONDS = Object.freeze({ correct: 2, incorrect: 4, timeout: 4 });
 
 export function isReadingQuestion(){return gameState.qte.pendingResult !== null;}
@@ -18,7 +20,7 @@ export function updateQuestionReading(deltaTime){
 // Sem estado paralelo: playerCombat.state é a autoridade da tentativa.
 export function beginAttackQTE(arm, punchType = gameState.punches.selected, kind = "attack", requiredState = "idle", timeLimit = 10) {
     const qte = gameState.qte;
-    if (isMatchOver() || gameState.phase === "lobby" || gameState.phase === "match_intro" || gameState.stun.remaining > 0 || gameState.playerCombat.state !== requiredState || qte.question
+    if (isMatchOver() || ['paused','lobby','match_intro'].includes(gameState.phase) || gameState.stun.remaining > 0 || gameState.playerCombat.state !== requiredState || qte.question
         || isReadingQuestion() || !Object.hasOwn(PUNCH_TYPES, punchType)) return false;
     qte.sequence += 1;
     qte.question = createQuestion(qte.sequence, kind, gameState.matchId);
@@ -39,7 +41,7 @@ export function beginCounterRushQTE(arm, type, timeLimit) {
 
 export function beginDefenseQuestion() {
     const qte = gameState.qte;
-    if (isMatchOver() || isReadingQuestion() || gameState.stun.remaining > 0 || gameState.playerCombat.state !== "defense_direction_qte" || qte.question) return false;
+    if (gameState.phase === 'paused' || isMatchOver() || isReadingQuestion() || gameState.stun.remaining > 0 || gameState.playerCombat.state !== "defense_direction_qte" || qte.question) return false;
     qte.sequence += 1;
     qte.question = createQuestion(qte.sequence, "defense", gameState.matchId);
     qte.feedbackRemaining = 0;
@@ -84,6 +86,8 @@ function finishQTE(outcome, answer) {
     qte.pendingPunch = null;
     qte.pendingPunchType = null;
     qte.remaining = 0;
+    observeProfessorAnswer(gameState,result,qte.sequence);
+    logProfessorAnswerDebug(result.outcome);
     return result;
 }
 
